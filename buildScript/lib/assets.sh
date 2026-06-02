@@ -8,21 +8,26 @@ mkdir -p $DIR
 cd $DIR
 
 get_latest_release() {
-  curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
-    grep '"tag_name":' |                                            # Get tag line
-    sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
+  curl -fL --retry 5 --retry-delay 5 --retry-all-errors --silent \
+    "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
+    grep '"tag_name":' |                                # Get tag line
+    sed -E 's/.*"([^"]+)".*/\1/'                        # Pluck JSON value
+}
+
+download_with_retry() {
+  curl -fL --retry 5 --retry-delay 5 --retry-all-errors -SsO "$1"
 }
 
 ####
 VERSION_GEOIP=`get_latest_release "SagerNet/sing-geoip"`
 echo VERSION_GEOIP=$VERSION_GEOIP
 echo -n $VERSION_GEOIP > geoip.version.txt
-curl -fLSsO https://github.com/SagerNet/sing-geoip/releases/download/$VERSION_GEOIP/geoip.db
+download_with_retry https://github.com/SagerNet/sing-geoip/releases/download/$VERSION_GEOIP/geoip.db
 xz -9 geoip.db
 
 ####
 VERSION_GEOSITE=`get_latest_release "SagerNet/sing-geosite"`
 echo VERSION_GEOSITE=$VERSION_GEOSITE
 echo -n $VERSION_GEOSITE > geosite.version.txt
-curl -fLSsO https://github.com/SagerNet/sing-geosite/releases/download/$VERSION_GEOSITE/geosite.db
+download_with_retry https://github.com/SagerNet/sing-geosite/releases/download/$VERSION_GEOSITE/geosite.db
 xz -9 geosite.db
